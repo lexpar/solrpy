@@ -155,7 +155,7 @@ class TestHTTPConnection(SolrConnectionTestCase):
         conn = self.new_connection()
 
         try:
-            conn.conn.request("GET")
+            conn.conn.request("GET", SOLR_HTTP)
         except socket.error:
             self.fail("Connection to %s failed" % (SOLR_HTTP))
 
@@ -167,7 +167,7 @@ class TestHTTPConnection(SolrConnectionTestCase):
         """ Make sure connections to Solr are being closed properly.
         """
         conn = self.new_connection()
-        conn.conn.request("GET", SOLR_PATH)
+        conn.conn.request("GET", SOLR_HTTP)
         conn.close()
 
         # Closing the Solr connection should close the underlying
@@ -1516,7 +1516,7 @@ class TestSolrAddingDocuments(SolrBased, RequestTracking, TestAddingDocuments):
             "/update?commit=true&waitSearcher=false")
         # Can't verify the add since we said we weren't going to wait
         # for a searcher.
-        self.assert_("<add>" in self.postbody())
+        self.assert_(b"<add>" in self.postbody())
 
     def test_add_waitflush_without_commit(self):
         doc = get_rand_userdoc()
@@ -1546,7 +1546,7 @@ class TestSolrAddingDocuments(SolrBased, RequestTracking, TestAddingDocuments):
             "/update?commit=true&waitSearcher=false")
         # Can't verify the add since we said we weren't going to wait
         # for a searcher.
-        self.assert_("<add>" in self.postbody())
+        self.assert_(b"<add>" in self.postbody())
 
     def test_add_many_waitflush_without_commit(self):
         docs = [get_rand_userdoc(), get_rand_userdoc()]
