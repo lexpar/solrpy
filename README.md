@@ -1,7 +1,7 @@
 # solrpy3
 
 
-solrpy3 is a simple fork of [solrpy](https://github.com/edsu/solrpy) that implements python 3 support. The following is the original readme.
+solrpy3 is a simple fork of [solrpy](https://github.com/edsu/solrpy) that implements python 3 support. The following is the original readme. This is an alpha release, and it is likely to be buggy, although I have deployed it in a production environment and it appears rather stable.
 
 ## Overview
 
