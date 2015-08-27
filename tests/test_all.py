@@ -7,12 +7,11 @@ Meant to be run against Solr 1.2+.
 """
 
 # stdlib
-import cPickle
 import pickle
 import socket
 import datetime
 import unittest
-import httplib
+import http.client
 from string import digits
 from random import choice
 from xml.dom.minidom import parseString
@@ -21,10 +20,10 @@ from xml.dom.minidom import parseString
 import solr
 import solr.core
 
-SOLR_PATH = "/solr/core0"
+SOLR_PATH = ""
 SOLR_HOST = "localhost"
-SOLR_PORT_HTTP = "8983"
-SOLR_PORT_HTTPS = "8943"
+SOLR_PORT_HTTP = "8080"
+SOLR_PORT_HTTPS = "8080"
 SOLR_HTTP = "http://" + SOLR_HOST + ":" + SOLR_PORT_HTTP  + SOLR_PATH
 SOLR_HTTPS = "https://" + SOLR_HOST + ":" + SOLR_PORT_HTTPS + SOLR_PATH
 
@@ -156,7 +155,7 @@ class TestHTTPConnection(SolrConnectionTestCase):
         conn = self.new_connection()
 
         try:
-            conn.conn.request("GET", "/solr/")
+            conn.conn.request("GET")
         except socket.error:
             self.fail("Connection to %s failed" % (SOLR_HTTP))
 
@@ -212,7 +211,7 @@ class TestAddingDocuments(SolrConnectionTestCase):
         """
         user_id = get_rand_string()
         data = get_rand_string()
-        letterset = [ u'a', u'b', u'c' ]
+        letterset = [ 'a', 'b', 'c' ]
         letters = [
             letterset,
             tuple(letterset),
@@ -713,7 +712,7 @@ class TestQuerying(SolrConnectionTestCase):
         # queries also return score for each document.
 
         for result in results:
-            fields = result.keys()
+            fields = list(result.keys())
             fields.remove(field_to_return)
 
             # Now there should only a score field
@@ -1105,19 +1104,19 @@ class TestQuerying(SolrConnectionTestCase):
                                   facet_field=['user_id','num'])
 
         self.assertTrue(hasattr(results,'facet_counts'))
-        self.assertTrue(u'facet_fields' in results.facet_counts)
-        self.assertTrue(u'num' in results.facet_counts[u'facet_fields'])
-        self.assertTrue(u'user_id' in results.facet_counts[u'facet_fields'])
-        self.assertEqual(len(results.facet_counts[u'facet_fields'][u'num']),1)
+        self.assertTrue('facet_fields' in results.facet_counts)
+        self.assertTrue('num' in results.facet_counts['facet_fields'])
+        self.assertTrue('user_id' in results.facet_counts['facet_fields'])
+        self.assertEqual(len(results.facet_counts['facet_fields']['num']),1)
         self.assertEqual(
-            len(results.facet_counts[u'facet_fields'][u'user_id']),
+            len(results.facet_counts['facet_fields']['user_id']),
             3)
         self.assertEqual(
-            results.facet_counts[u'facet_fields'][u'num'],
-            {u'10':12})
+            results.facet_counts['facet_fields']['num'],
+            {'10':12})
         self.assertEqual(
-            results.facet_counts[u'facet_fields'][u'user_id'],
-            {u'0':4,u'1':4,u'2':4})
+            results.facet_counts['facet_fields']['user_id'],
+            {'0':4,'1':4,'2':4})
 
 
     # Exception tests
@@ -1305,13 +1304,13 @@ class TestResponse(SolrConnectionTestCase):
         response = self.query(self.conn, q="id:" + id)
         # here we also check the type of the attribute
         expected_attrs = {
-            "numFound": long,
-            "start": long,
+            "numFound": int,
+            "start": int,
             "maxScore": float,
             "header": dict,
             }
 
-        for attr, attr_type in expected_attrs.items():
+        for attr, attr_type in list(expected_attrs.items()):
             self.assertTrue(hasattr(response, attr),
                 "Attribute %s not found in response. id:%s" % (attr, id))
 
@@ -1406,7 +1405,7 @@ class ThrowBadStatusLineExceptions(object):
     def __call__(self, *args, **kwargs):
         self.calls += 1
         if self.max is None or self.calls <= self.max:
-            raise httplib.BadStatusLine('Dummy status line exception')
+            raise http.client.BadStatusLine('Dummy status line exception')
         return self.wrap(*args, **kwargs)
 
 
@@ -1422,7 +1421,7 @@ class TestRetries(SolrConnectionTestCase):
         and still raises the exception """
         t = ThrowBadStatusLineExceptions(self.conn)
 
-        self.assertRaises(httplib.BadStatusLine, self.query,
+        self.assertRaises(http.client.BadStatusLine, self.query,
                           self.conn, "user_id:12345")
 
         self.assertEqual(t.calls, 4)
@@ -1866,13 +1865,13 @@ class SolrExceptionSimpleMessagePickleTestCase(
 class SolrExceptionHttpStatusCPickleTestCase(
     SolrExceptionHttpStatusPickleTestCase):
 
-    module = cPickle
+    module = pickle
 
 
 class SolrExceptionSimpleMessageCPickleTestCase(
     SolrExceptionSimpleMessagePickleTestCase):
 
-    module = cPickle
+    module = pickle
 
 
 

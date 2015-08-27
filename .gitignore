@@ -1,2 +1,3 @@
 *.pyc
 solrpy.egg-info
+testsolr

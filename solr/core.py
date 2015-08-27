@@ -241,13 +241,13 @@ Enter a raw query, without processing the returned HTML contents.
 """
 import sys
 import socket
-import httplib
-import urlparse
+import http.client
+import urllib.parse
 import codecs
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import datetime
 import logging
-from StringIO import StringIO
+from io import StringIO
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
 from xml.sax.saxutils import escape, quoteattr
@@ -373,7 +373,7 @@ class Solr:
 
         """
 
-        self.scheme, self.host, self.path = urlparse.urlparse(url, 'http')[:3]
+        self.scheme, self.host, self.path = urllib.parse.urlparse(url, 'http')[:3]
         self.url = url
 
         assert self.scheme in ('http','https')
@@ -393,10 +393,10 @@ class Solr:
             kwargs['timeout'] = self.timeout
 
         if self.scheme == 'https':
-            self.conn = httplib.HTTPSConnection(self.host,
+            self.conn = http.client.HTTPSConnection(self.host,
                    key_file=ssl_key, cert_file=ssl_cert, **kwargs)
         else:
-            self.conn = httplib.HTTPConnection(self.host, **kwargs)
+            self.conn = http.client.HTTPConnection(self.host, **kwargs)
 
         self.response_version = 2.2
         self.encoder = codecs.getencoder('utf-8')
@@ -491,9 +491,9 @@ class Solr:
 
         Supports commit-control arguments.
         """
-        lst = [u'<add>']
+        lst = ['<add>']
         self.__add(lst, doc)
-        lst.append(u'</add>')
+        lst.append('</add>')
         return ''.join(lst)
 
     @committing
@@ -506,10 +506,10 @@ class Solr:
 
         Supports commit-control arguments.
         """
-        lst = [u'<add>']
+        lst = ['<add>']
         for doc in docs:
             self.__add(lst, doc)
-        lst.append(u'</add>')
+        lst.append('</add>')
         return ''.join(lst)
 
     def commit(self, wait_flush=True, wait_searcher=True, _optimize=False):
@@ -540,7 +540,7 @@ class Solr:
                 options = 'waitSearcher="false"'
         else:
             options = ''
-        xstr = u'<%s %s/>' % (verb, options)
+        xstr = '<%s %s/>' % (verb, options)
         return self._update(xstr)
 
     # Helper methods.
@@ -557,7 +557,7 @@ class Solr:
         # Detect old-style error response (HTTP response code
         # of 200 with a non-zero status).
         starts = data.startswith
-        if starts('<result status="') and not starts('<result status="0"'):
+        if data.startswith(b'<result status="') and not data.startswith(b'<result status="0"'):
             data = self.decoder(data)[0]
             parsed = parseString(data)
             status = parsed.documentElement.getAttribute('status')
@@ -567,8 +567,8 @@ class Solr:
         return data
 
     def __add(self, lst, fields):
-        lst.append(u'<doc>')
-        for field, value in fields.items():
+        lst.append('<doc>')
+        for field, value in list(fields.items()):
             # Handle multi-valued fields if values
             # is passed in as a list/tuple
             if not isinstance(value, (list, tuple, set)):
@@ -592,7 +592,7 @@ class Solr:
 
                 lst.append('<field name=%s>%s</field>' % (
                     (quoteattr(field),
-                    escape(unicode(value)))))
+                    escape(str(value)))))
         lst.append('</doc>')
 
     def _delete(self, id=None, ids=None, queries=None):
@@ -605,12 +605,12 @@ class Solr:
             ids.insert(0, id)
         lst = []
         for id in ids:
-            lst.append(u'<id>%s</id>\n' % escape(unicode(id)))
+            lst.append('<id>%s</id>\n' % escape(str(id)))
         for query in (queries or ()):
-            lst.append(u'<query>%s</query>\n' % escape(unicode(query)))
+            lst.append('<query>%s</query>\n' % escape(str(query)))
         if lst:
-            lst.insert(0, u'<delete>\n')
-            lst.append(u'</delete>')
+            lst.insert(0, '<delete>\n')
+            lst.append('</delete>')
             return ''.join(lst)
 
     def __repr__(self):
@@ -639,8 +639,8 @@ class Solr:
                 self.conn.request('POST', url, body.encode('UTF-8'), _headers)
                 return check_response_status(self.conn.getresponse())
             except (socket.error,
-                    httplib.ImproperConnectionState,
-                    httplib.BadStatusLine):
+                    http.client.ImproperConnectionState,
+                    http.client.BadStatusLine):
                     # We include BadStatusLine as they are spurious
                     # and may randomly happen on an otherwise fine
                     # Solr connection (though not often)
@@ -755,13 +755,13 @@ class SearchHandler(object):
         if highlight:
             params['hl'] = 'true'
             if not isinstance(highlight, (bool, int, float)):
-                if not isinstance(highlight, basestring):
+                if not isinstance(highlight, str):
                     highlight = ",".join(highlight)
                 params['hl_fl'] = highlight
             else:
                 if not fields:
                     raise ValueError("highlight is True and no fields were given")
-                elif isinstance(fields, basestring):
+                elif isinstance(fields, str):
                     params['hl_fl'] = [fields]
                 else:
                     params['hl_fl'] = ",".join(fields)
@@ -770,7 +770,7 @@ class SearchHandler(object):
             params['q'] = q
 
         if fields:
-            if not isinstance(fields, basestring):
+            if not isinstance(fields, str):
                 fields = ",".join(fields)
         if not fields:
             fields = '*'
@@ -778,7 +778,7 @@ class SearchHandler(object):
         if sort:
             if not sort_order or sort_order not in ("asc", "desc"):
                 raise ValueError("sort_order must be 'asc' or 'desc'")
-            if isinstance(sort, basestring):
+            if isinstance(sort, str):
                 sort = [ f.strip() for f in sort.split(",") ]
             sorting = []
             for e in sort:
@@ -797,6 +797,8 @@ class SearchHandler(object):
         params['wt'] = 'standard'
 
         xml = self.raw(**params)
+        if type(xml) == bytes:
+            xml = xml.decode('utf-8')
         return parse_query_response(StringIO(xml),  params, self)
 
     def raw(self, **params):
@@ -808,13 +810,13 @@ class SearchHandler(object):
         """
         # Clean up optional parameters to match SOLR spec.
         query = []
-        for key, value in params.items():
+        for key, value in list(params.items()):
             key = key.replace(self.arg_separator, '.')
             if isinstance(value, (list, tuple)):
                 query.extend([(key, strify(v)) for v in value])
             else:
                 query.append((key, strify(value)))
-        request = urllib.urlencode(query, doseq=True)
+        request = urllib.parse.urlencode(query, doseq=True)
         conn = self.conn
         if conn.debug:
             logging.info("solrpy request: %s" % request)
@@ -832,7 +834,7 @@ class SearchHandler(object):
 
 
 def strify(s):
-    if isinstance(s, unicode):
+    if isinstance(s, str):
         return s.encode('utf-8')
     else:
         return s
@@ -862,7 +864,7 @@ class Response(object):
         self._params = {}
 
     def _set_numFound(self, value):
-        self._numFound = long(value)
+        self._numFound = int(value)
 
     def _get_numFound(self):
         return self._numFound
@@ -873,7 +875,7 @@ class Response(object):
     numFound = property(_get_numFound, _set_numFound, _del_numFound)
 
     def _set_start(self, value):
-        self._start = long(value)
+        self._start = int(value)
 
     def _get_start(self):
         return self._start
@@ -1010,7 +1012,7 @@ class ResponseContentHandler(ContentHandler):
             node.final = None
 
         elif name == 'long':
-            node.final = long(value.strip())
+            node.final = int(value.strip())
 
         elif name == 'bool':
             node.final = value.strip().lower().startswith('t')
@@ -1055,7 +1057,7 @@ class ResponseContentHandler(ContentHandler):
         else:
             raise SolrException("Unknown tag: %s" % name)
 
-        for attr, val in node.attrs.items():
+        for attr, val in list(node.attrs.items()):
             if attr != 'name':
                 setattr(node.final, attr, val)
 
@@ -1087,7 +1089,7 @@ class Node(object):
             self.name,
             "".join(self.chars).strip(),
             ' '.join(['%s="%s"' % (attr, val)
-                            for attr, val in self.attrs.items()]))
+                            for attr, val in list(self.attrs.items())]))
 
 
 # ===================================================================
@@ -1161,11 +1163,11 @@ def qs_from_items(query):
     qs = ''
     if query:
         sep = '?'
-        for k, v in query.items():
-            k = urllib.quote(k)
-            if isinstance(v, basestring):
+        for k, v in list(query.items()):
+            k = urllib.parse.quote(k)
+            if isinstance(v, str):
                 v = [v]
             for s in v:
-                qs += "%s%s=%s" % (sep, k, urllib.quote_plus(s))
+                qs += "%s%s=%s" % (sep, k, urllib.parse.quote_plus(s))
                 sep = '&'
     return qs

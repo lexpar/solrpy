@@ -1,2 +1,2 @@
-from core import *
-from paginator import *
+from .core import *
+from .paginator import *
