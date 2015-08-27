@@ -779,14 +779,17 @@ class SearchHandler(object):
             if not sort_order or sort_order not in ("asc", "desc"):
                 raise ValueError("sort_order must be 'asc' or 'desc'")
             if isinstance(sort, str):
-                sort = [ f.strip() for f in sort.split(",") ]
+                sort = [f.strip() for f in sort.split(",")]
+            if isinstance(sort, bytes):
+                sort = [f.strip().decode('utf-8') for f in sort.split(b",")]
             sorting = []
             for e in sort:
                 if not (e.endswith("asc") or e.endswith("desc")):
                     sorting.append("%s %s" % (e, sort_order))
                 else:
                     sorting.append(e)
-            sort = ",".join(sorting)
+            if sorting:
+                sort = ",".join(sorting)
             params['sort'] = sort
 
         if score and not 'score' in fields.replace(',',' ').split():
