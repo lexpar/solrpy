@@ -80,11 +80,11 @@ class SolrConnectionTestCase(unittest.TestCase):
         for doc in docs:
             # Search for a single document and verify the fields.
             results = self.query(conn, "id:" + doc["id"]).results
-            self.assertEquals(
+            self.assertEqual(
                 len(results), 1,
                 "Could not find expected data (id:%s)" % doc["id"])
-            self.assertEquals(results[0]["user_id"], doc["user_id"])
-            self.assertEquals(results[0]["data"], doc["data"])
+            self.assertEqual(results[0]["user_id"], doc["user_id"])
+            self.assertEqual(results[0]["data"], doc["data"])
 
     def check_removed(self, doc=None, docs=None):
         if docs is None:
@@ -94,7 +94,7 @@ class SolrConnectionTestCase(unittest.TestCase):
         conn = self._connections[-1]
         for doc in docs:
             results = self.query(conn, "id:" + doc["id"]).results
-            self.assertEquals(
+            self.assertEqual(
                 len(results), 0,
                 "Document (id:%s) should have been deleted" % doc["id"])
 
@@ -160,7 +160,7 @@ class TestHTTPConnection(SolrConnectionTestCase):
             self.fail("Connection to %s failed" % (SOLR_HTTP))
 
         status = conn.conn.getresponse().status
-        self.assertEquals(status, 200,
+        self.assertEqual(status, 200,
                           "Expected FOUND (200), got: %d" % status)
 
     def test_close_connection(self):
@@ -172,7 +172,7 @@ class TestHTTPConnection(SolrConnectionTestCase):
 
         # Closing the Solr connection should close the underlying
         # HTTPConnection's socket.
-        self.assertEquals(conn.conn.sock, None, "Connection not closed")
+        self.assertEqual(conn.conn.sock, None, "Connection not closed")
 
     def test_invalid_max_retries(self):
         """ Passing something that can't be cast as an integer for max_retries
@@ -199,11 +199,11 @@ class TestAddingDocuments(SolrConnectionTestCase):
         self.conn.commit()
         results = self.query(self.conn, "id:" + doc["id"]).results
 
-        self.assertEquals(len(results), 1,
+        self.assertEqual(len(results), 1,
             "Could not find expected data (id:%s)" % id)
 
-        self.assertEquals(results[0]["user_id"], doc["user_id"])
-        self.assertEquals(results[0]["data"], doc["data"])
+        self.assertEqual(results[0]["user_id"], doc["user_id"])
+        self.assertEqual(results[0]["data"], doc["data"])
 
     def test_add_one_document_multiplefields(self):
         """ Adds several documents with multiple fields, namely
@@ -226,13 +226,13 @@ class TestAddingDocuments(SolrConnectionTestCase):
 
         results = self.query(self.conn, "user_id:" + user_id).results
 
-        self.assertEquals(len(results), 3,
+        self.assertEqual(len(results), 3,
             "Could not find expected data (user_id:%s)" % user_id)
 
         for i, doc in enumerate(results):
-            self.assertEquals(doc["user_id"], user_id)
-            self.assertEquals(doc["data"], data)
-            self.assertEquals(doc["letters"], list(letters[i]))
+            self.assertEqual(doc["user_id"], user_id)
+            self.assertEqual(doc["data"], data)
+            self.assertEqual(doc["letters"], list(letters[i]))
 
     def test_add_one_document_implicit_commit(self):
         """ Try to add one document and commit changes in one operation.
@@ -252,7 +252,7 @@ class TestAddingDocuments(SolrConnectionTestCase):
         doc = get_rand_userdoc()
         self.add(**doc)
         results = self.query(self.conn, "user_id:" + doc["user_id"]).results
-        self.assertEquals(len(results), 0,
+        self.assertEqual(len(results), 0,
             "Document (id:%s) shouldn't have been fetched" % (doc["id"]))
 
     def test_add_many(self):
@@ -275,7 +275,7 @@ class TestAddingDocuments(SolrConnectionTestCase):
                 self.fail("Could not find document (id:%s)" % id)
             results.append(res[0])
 
-        self.assertEquals(len(results), doc_count,
+        self.assertEqual(len(results), doc_count,
             "Query didn't return all documents. Expected: %d, got: %d" % (
                 doc_count, len(results)))
 
@@ -335,7 +335,7 @@ class TestAddingDocuments(SolrConnectionTestCase):
 
         for user_id in user_ids:
             results = self.query(self.conn, "user_id:" + user_id).results
-            self.assertEquals(len(results), 0,
+            self.assertEqual(len(results), 0,
                 "Document (id:%s) shouldn't have been fetched" % (id))
 
     def test_add_unicode(self):
@@ -356,15 +356,15 @@ class TestAddingDocuments(SolrConnectionTestCase):
         query_data = results[0]["data"]
         query_id = results[0]["id"]
 
-        self.assertEquals(
+        self.assertEqual(
             doc["user_id"], query_user_id,
             ("Invalid user_id, expected: %s, got: %s"
              % (doc["user_id"], query_user_id)))
-        self.assertEquals(
+        self.assertEqual(
             data, query_data,
             ("Invalid data, expected: %s, got: %s"
              % (repr(data), repr(query_data))))
-        self.assertEquals(
+        self.assertEqual(
             doc["id"], query_id,
             "Invalid id, expected: %s, got: %s" % (doc["id"], query_id))
 
@@ -392,7 +392,7 @@ class TestAddingDocuments(SolrConnectionTestCase):
                 self.fail("Could not find document (id:%s)" % id)
             results.append(res[0])
 
-        self.assertEquals(len(results), len(chars),
+        self.assertEqual(len(results), len(chars),
             "Query didn't return all documents. Expected: %d, got: %d" % (
                 len(chars), len(results)))
 
@@ -452,7 +452,7 @@ class TestUpdatingDocuments(SolrConnectionTestCase):
 
         results = self.query(self.conn, "id:" + id).results
         doc = results[0]
-        self.assertEquals(doc["data"], updated_data)
+        self.assertEqual(doc["data"], updated_data)
 
     def test_update_many(self):
         """ Try to add more than one document in a single operation, and then
@@ -484,7 +484,7 @@ class TestUpdatingDocuments(SolrConnectionTestCase):
                 self.fail("Could not find document (id:%s)" % id)
             results.append(res[0])
 
-        self.assertEquals(len(results), doc_count,
+        self.assertEqual(len(results), doc_count,
             "Query didn't return all documents. Expected: %d, got: %d" % (
                 doc_count, len(results)))
 
@@ -528,7 +528,7 @@ class TestDocumentsDeletion(SolrConnectionTestCase):
         self.conn.commit()
 
         results = self.query(self.conn, "id:" + id).results
-        self.assertEquals(len(results), 0,
+        self.assertEqual(len(results), 0,
             "Document (id:%s) should've been deleted" % id)
 
     def test_delete_many_documents_by_query(self):
@@ -545,7 +545,7 @@ class TestDocumentsDeletion(SolrConnectionTestCase):
         results = self.query(self.conn, "user_id:" + user_id).results
 
         # Make sure the docs were in fact added.
-        self.assertEquals(len(results), doc_count,
+        self.assertEqual(len(results), doc_count,
             "There should be %d documents for user_id:%s" % (doc_count, user_id))
 
         # Now delete documents and commit the changes
@@ -554,7 +554,7 @@ class TestDocumentsDeletion(SolrConnectionTestCase):
 
         results = self.query(self.conn, "user_id:" + user_id).results
 
-        self.assertEquals(len(results), 0,
+        self.assertEqual(len(results), 0,
             "There should be no documents for user_id:%s" % (user_id))
 
     def test_delete_many(self):
@@ -576,7 +576,7 @@ class TestDocumentsDeletion(SolrConnectionTestCase):
         # Make sure they've been added
         for id in ids:
             results = self.query(self.conn, "id:" + id).results
-            self.assertEquals(len(results), 1,
+            self.assertEqual(len(results), 1,
                 "Document (id:%s) should've been added to index" % id)
 
         # Delete documents by their ID and commit changes
@@ -586,7 +586,7 @@ class TestDocumentsDeletion(SolrConnectionTestCase):
         # Make sure they've been deleted
         for id in ids:
             results = self.query(self.conn, "id:" + id).results
-            self.assertEquals(len(results), 0,
+            self.assertEqual(len(results), 0,
                 "Document (id:%s) should've been deleted from index" % id)
 
     def test_delete_by_unique_key(self):
@@ -604,14 +604,14 @@ class TestDocumentsDeletion(SolrConnectionTestCase):
         results = self.query(self.conn, "id:" + id).results
 
         # Make sure the docs were in fact added.
-        self.assertEquals(len(results), 1,
+        self.assertEqual(len(results), 1,
             "No results returned for query id:%s"% (id))
 
         # Delete the document and make sure it's no longer in the index
         self.conn.delete(id)
         self.conn.commit()
         results = self.query(self.conn, "id:" + id).results
-        self.assertEquals(len(results), 0,
+        self.assertEqual(len(results), 0,
             "Document (id:%s) should've been deleted"% (id))
 
 
@@ -636,7 +636,7 @@ class TestQuerying(SolrConnectionTestCase):
         self.conn.commit()
 
         results = self.query(self.conn, "user_id:" + user_id).results
-        self.assertEquals(len(results), doc_count,
+        self.assertEqual(len(results), doc_count,
             "There should be exactly %d documents returned, got: %d" % (
                 doc_count, len(results)))
 
@@ -654,17 +654,17 @@ class TestQuerying(SolrConnectionTestCase):
         query_ids = [doc["id"] for doc in results]
         ids_symdiff = set(ids) ^ set(query_ids)
 
-        self.assertEquals(ids_symdiff, set([]),
+        self.assertEqual(ids_symdiff, set([]),
             "IDs sets differ (difference:%s)" % (ids_symdiff))
 
         # Now loop through results and check whether fields are okay
         for result in results:
             for id in ids:
                 if result["id"] == id:
-                    self.assertEquals(result["data"], data,
+                    self.assertEqual(result["data"], data,
                         "Data differs, expected:%s, got:%s" % (
                             data, result["data"]))
-                    self.assertEquals(result["user_id"], user_id,
+                    self.assertEqual(result["user_id"], user_id,
                         "User ID differs, expected:%s, got:%s" % (
                             data, result["user_id"]))
 
@@ -693,7 +693,7 @@ class TestQuerying(SolrConnectionTestCase):
         # We want to return only the "id" field
         results = self.query(
             self.conn, "data:" + data, fields=field_to_return).results
-        self.assertEquals(len(results), doc_count,
+        self.assertEqual(len(results), doc_count,
             "There should be exactly %d documents returned, got: %d" % (
                 doc_count, len(results)))
 
@@ -703,7 +703,7 @@ class TestQuerying(SolrConnectionTestCase):
         query_ids = [doc[field_to_return] for doc in results]
         ids_symdiff = set(ids) ^ set(query_ids)
 
-        self.assertEquals(
+        self.assertEqual(
             ids_symdiff, set([]),
             "Query didn't return expected fields (difference:%s)"
             % (ids_symdiff))
@@ -716,12 +716,12 @@ class TestQuerying(SolrConnectionTestCase):
             fields.remove(field_to_return)
 
             # Now there should only a score field
-            self.assertEquals(len(fields), 1,
+            self.assertEqual(len(fields), 1,
                 ("More fields returned than expected, "
                 "expected:%s and score, the result is:%s)" % (
                     field_to_return,result)))
 
-            self.assertEquals(
+            self.assertEqual(
                 fields[0], "score",
                 "Query returned some other fields then %s and score, result:%s"
                 % (field_to_return,result))
@@ -738,7 +738,7 @@ class TestQuerying(SolrConnectionTestCase):
         self.conn.commit()
 
         results = self.query(self.conn, "id:" + id).results
-        self.assertEquals(len(results), 1,
+        self.assertEqual(len(results), 1,
             "No documents fetched, expected id:%s" % (id))
 
         doc = results[0]
@@ -762,7 +762,7 @@ class TestQuerying(SolrConnectionTestCase):
 
         results = self.query(self.conn, "id:" + id, score=False).results
 
-        self.assertEquals(len(results), 1,
+        self.assertEqual(len(results), 1,
             "No documents fetched, expected id:%s" % (id))
 
         doc = results[0]
@@ -804,7 +804,7 @@ class TestQuerying(SolrConnectionTestCase):
 
         content = parseString(highlighting[id]["id"][0])
         highlighting_id = content.firstChild.firstChild.nodeValue
-        self.assertEquals(highlighting_id, id,
+        self.assertEqual(highlighting_id, id,
             "Highlighting didn't return id value, expected:%s, got:%s" % (
                 id, highlighting_id))
 
@@ -829,7 +829,7 @@ class TestQuerying(SolrConnectionTestCase):
 
         content = parseString(highlighting[id]["id"][0])
         highlighting_id = content.firstChild.firstChild.nodeValue
-        self.assertEquals(highlighting_id, id,
+        self.assertEqual(highlighting_id, id,
             "Highlighting didn't return id value, expected:%s, got:%s" % (
                 id, highlighting_id))
 
@@ -870,7 +870,7 @@ class TestQuerying(SolrConnectionTestCase):
             # user_id and data are equal
             content = parseString(highlighting[id][field][0])
             highlighting_value = content.firstChild.firstChild.nodeValue
-            self.assertEquals(highlighting_value, data,
+            self.assertEqual(highlighting_value, data,
                 "Highlighting didn't return %s value, expected:%s, got:%s" % (
                     field, data, highlighting_value))
 
@@ -896,13 +896,13 @@ class TestQuerying(SolrConnectionTestCase):
 
         doc_elem = xml.getElementsByTagName("doc")
 
-        self.assertEquals(len(doc_elem), 1,
+        self.assertEqual(len(doc_elem), 1,
             "raw_query didn't return the document, id:%s, the response is:%s" %
                 (id, repr(response)))
 
         query_data = doc_elem[0].firstChild.firstChild.nodeValue
 
-        self.assertEquals(query_data, data,
+        self.assertEqual(query_data, data,
             ("raw_query returned wrong value for data field, "
             "expected %s, got:%s" % (data, query_data)))
 
@@ -924,14 +924,14 @@ class TestQuerying(SolrConnectionTestCase):
         results = self.query(
             self.conn, q="user_id:" + user_id, sort="data").results
 
-        self.assertEquals(len(results), doc_count,
+        self.assertEqual(len(results), doc_count,
             "There should be %d documents returned, got:%d, results:%s" % (
                 doc_count, len(results), results))
 
         query_data = [doc["data"] for doc in results]
 
         for idx, datum in enumerate(sorted(data)):
-            self.assertEquals(datum, query_data[idx],
+            self.assertEqual(datum, query_data[idx],
                 "Expected %s instead of %s on position %s in query_data:%s" % (
                     datum, query_data[idx], idx, query_data))
 
@@ -950,17 +950,17 @@ class TestQuerying(SolrConnectionTestCase):
             self.add(id=get_rand_string(), user_id=user_id, data=datum)
         self.conn.commit()
 
-        results = self.query(self.conn, q="user_id:" + user_id, sort="data_sort",
+        results = self.query(self.conn, q="user_id:" + user_id, sort="data",
             sort_order="desc").results
 
-        self.assertEquals(len(results), doc_count,
+        self.assertEqual(len(results), doc_count,
             "There should be %d documents returned, got:%d, results:%s" % (
                 doc_count, len(results), results))
 
         query_data = [doc["data"] for doc in results]
 
         for idx, datum in enumerate(reversed(sorted(data))):
-            self.assertEquals(datum, query_data[idx],
+            self.assertEqual(datum, query_data[idx],
                 "Expected %s instead of %s on position %s in query_data:%s" % (
                     datum, query_data[idx], idx, query_data))
 
@@ -984,12 +984,13 @@ class TestQuerying(SolrConnectionTestCase):
 
         results = self.query(self.conn, 
             q="user_id:%s OR user_id:%s" % (user_ids[0], user_ids[1]),
-            sort=["user_id asc", "data_sort desc"]).results
+            sort=["user_id asc", "data desc"]).results
 
-        self.assertEquals(len(results), doc_count,
+        self.assertEqual(len(results), doc_count,
             "There should be %d documents returned, got:%d, results:%s" % (
                 doc_count, len(results), results))
 
+        
         data.reverse()
         # I'm not entirely sure wheter Python 2.3 supports this
         # expected = [(a,b) for a in user_ids for b in data]
@@ -1002,7 +1003,7 @@ class TestQuerying(SolrConnectionTestCase):
         for idx, result in enumerate(results):
             params =  (result['user_id'], result['data']) + expected[idx] + \
                 (idx, results, expected)
-            self.assertEquals(
+            self.assertEqual(
                 (result['user_id'], result['data']),
                 expected[idx],
                 ("Expected %s, %s instead of %s, %s at position %s"
@@ -1064,7 +1065,7 @@ class TestQuerying(SolrConnectionTestCase):
 
         results = self.query(self.conn, "id:" + id).results
 
-        self.assertEquals(len(results), 1,
+        self.assertEqual(len(results), 1,
             "Expected 1 document, got:%d documents" % (len(results)))
 
         results = results[0]
@@ -1231,7 +1232,7 @@ class TestCommitingOptimizing(SolrConnectionTestCase):
 
         # Make sure the changes weren't commited.
         results = self.query(self.conn, "id:" + id).results
-        self.assertEquals(len(results), 0,
+        self.assertEqual(len(results), 0,
             ("Changes to index shouldn't be visible without commiting, "
              "results:%s" % (repr(results))))
 
@@ -1239,7 +1240,7 @@ class TestCommitingOptimizing(SolrConnectionTestCase):
         self.conn.commit()
 
         results = self.query(self.conn, "id:" + id).results
-        self.assertEquals(len(results), 1,
+        self.assertEqual(len(results), 1,
             "No documents returned, results:%s" % (repr(results)))
 
     def test_optimize(self):
@@ -1251,7 +1252,7 @@ class TestCommitingOptimizing(SolrConnectionTestCase):
 
         # Make sure the changes weren't commited.
         results = self.query(self.conn, "id:" + id).results
-        self.assertEquals(len(results), 0,
+        self.assertEqual(len(results), 0,
             ("Changes to index shouldn't be visible without call"
              "to optimize first, results:%s" % (repr(results))))
 
@@ -1259,7 +1260,7 @@ class TestCommitingOptimizing(SolrConnectionTestCase):
         self.conn.optimize()
 
         results = self.query(self.conn, "id:" + id).results
-        self.assertEquals(len(results), 1,
+        self.assertEqual(len(results), 1,
             "No documents returned, results:%s" % (repr(results)))
 
     def test_commit_optimize(self):
@@ -1274,7 +1275,7 @@ class TestCommitingOptimizing(SolrConnectionTestCase):
 
         # Make sure the changes weren't commited.
         results = self.query(self.conn, "id:" + id).results
-        self.assertEquals(len(results), 0,
+        self.assertEqual(len(results), 0,
             ("Changes to index shouldn't be visible without commiting, "
              "results:%s" % (repr(results))))
 
@@ -1282,7 +1283,7 @@ class TestCommitingOptimizing(SolrConnectionTestCase):
         self.conn.commit(_optimize=True)
 
         results = self.query(self.conn, "id:" + id).results
-        self.assertEquals(len(results), 1,
+        self.assertEqual(len(results), 1,
             "No documents returned, results:%s" % (repr(results)))
 
 
@@ -1386,7 +1387,7 @@ class TestPaginator(SolrConnectionTestCase):
         chinese_data = '\xe6\xb3\xb0\xe5\x9b\xbd'
         self.conn.add(id=100, data=chinese_data)
         self.conn.commit()
-        result = self.query(self.conn, chinese_data.encode('utf-8'))
+        result = self.query(self.conn, "data:{}".format(chinese_data))
         paginator = solr.SolrPaginator(result, default_page_size=10)
         try:
             paginator.page(1)
@@ -1575,7 +1576,7 @@ class TestSolrDocumentDeletion(SolrBased, RequestTracking,
         self.conn.delete_query("id:" + id, **{what: True})
         self.check_removed(doc)
         results = self.query(self.conn, "id:" + id).results
-        self.assertEquals(len(results), 0,
+        self.assertEqual(len(results), 0,
             "Document (id:%s) should've been deleted" % id)
 
     def test_delete_many_documents_by_query_inline_commit(self, what="commit"):
@@ -1590,7 +1591,7 @@ class TestSolrDocumentDeletion(SolrBased, RequestTracking,
 
         # Make sure the docs were in fact added.
         results = self.query(self.conn, "user_id:" + user_id).results
-        self.assertEquals(
+        self.assertEqual(
             len(results), doc_count,
             ("There should be %d documents for user_id:%s"
              % (doc_count, user_id)))
@@ -1599,7 +1600,7 @@ class TestSolrDocumentDeletion(SolrBased, RequestTracking,
         self.conn.delete_query("user_id:" + user_id, **{what: True})
 
         results = self.query(self.conn, "user_id:" + user_id).results
-        self.assertEquals(len(results), 0,
+        self.assertEqual(len(results), 0,
             "There should be no documents for user_id:%s" % (user_id))
         self.check_removed(docs=documents)
 
@@ -1635,7 +1636,7 @@ class TestSolrDocumentDeletion(SolrBased, RequestTracking,
         results = self.query(self.conn, "id:" + id).results
 
         # Make sure the docs were in fact added.
-        self.assertEquals(len(results), 1,
+        self.assertEqual(len(results), 1,
             "No results returned for query id:%s"% (id))
 
         # Delete the document and make sure it's no longer in the index
