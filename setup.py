@@ -3,10 +3,12 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'solrpy3',
-    version = '0.1',
+    version = '1',
+    author = 'Alex Parmentier',
+    author_email = 'a.g.parmentier@gmail.com',
     url = 'https://github.com/lexpar/solrpy/tree/python3',
     license = 'MIT',
-    packages=find_packages(),
+    packages=['solr'],
     install_requires = [],
     description = 'Fork of solrpy 0.9.7 implementing python3 support.',
     tests_require = ["nose>=0.10.1"],
@@ -14,14 +16,10 @@ setup(
 
     classifiers=
     [
-        'License :: MIT License',
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.2',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3 :: Only'
+
     ],
 
 )
