@@ -15,6 +15,7 @@ import http.client
 from string import digits
 from random import choice
 from xml.dom.minidom import parseString
+import urllib
 
 # solrpy
 import solr
@@ -98,6 +99,12 @@ class SolrConnectionTestCase(unittest.TestCase):
                 len(results), 0,
                 "Document (id:%s) should have been deleted" % doc["id"])
 
+    def compare_qs(self, url1, url2):
+        p1 = urllib.parse.urlparse(url1)[4]
+        p2 = urllib.parse.urlparse(url2)[4]
+        q1 = urllib.parse.parse_qs(p1)
+        q2 = urllib.parse.parse_qs(p2)
+        self.assertDictEqual(q1, q2)
 
 class SolrBased(SolrConnectionTestCase):
 
@@ -1192,22 +1199,20 @@ class TestSolrConnectionSearchHandler(SolrConnectionTestCase):
         conn = self.new_connection()
         conn.select("id:foobar", score=False)
         self.assertEqual(self.request_selector, SOLR_PATH + "/select")
-        self.assertEqual(self.request_body,
-                         "q=id%3Afoobar&version=2.2&fl=%2A&wt=standard")
+        self.compare_qs(self.request_body, "q=id%3Afoobar&version=2.2&fl=%2A&wt=standard")
 
     def test_select_raw_request(self):
         conn = self.new_connection()
         conn.select.raw(q="id:foobar")
         self.assertEqual(self.request_selector, SOLR_PATH + "/select")
-        self.assertEqual(self.request_body, "q=id%3Afoobar")
+        self.compare_qs(self.request_body, "q=id%3Afoobar")
 
     def test_alternate_request(self):
         conn = self.new_connection()
         alternate = solr.SearchHandler(conn, "/alternate/path")
         alternate("id:foobar", score=False)
         self.assertEqual(self.request_selector, SOLR_PATH + "/alternate/path")
-        self.assertEqual(self.request_body,
-                         "q=id%3Afoobar&version=2.2&fl=%2A&wt=standard")
+        self.compare_qs(self.request_body, "q=id%3Afoobar&version=2.2&fl=%2A&wt=standard")
 
     def test_alternate_raw_request(self):
         conn = self.new_connection()
@@ -1501,23 +1506,22 @@ class TestSolrAddingDocuments(SolrBased, RequestTracking, TestAddingDocuments):
         doc = get_rand_userdoc()
         # Add with commit:
         self.conn.add(doc, commit=True, wait_flush=False)
-        self.assertEqual(
-            self.selector(),
+        self.compare_qs(self.selector(),
             "/update?commit=true&waitFlush=false&waitSearcher=false")
+
         # Can't verify the add since we said we weren't going to wait
         # for the flush.
-        self.assert_("<add>" in self.postbody())
+        self.assertTrue(b"<add>" in self.postbody())
 
     def test_add_nosearcher(self):
         doc = get_rand_userdoc()
         # Add with commit:
         self.conn.add(doc, commit=True, wait_searcher=False)
-        self.assertEqual(
-            self.selector(),
+        self.compare_qs(self.selector(), 
             "/update?commit=true&waitSearcher=false")
         # Can't verify the add since we said we weren't going to wait
         # for a searcher.
-        self.assert_(b"<add>" in self.postbody())
+        self.assertTrue(b"<add>" in self.postbody())
 
     def test_add_waitflush_without_commit(self):
         doc = get_rand_userdoc()
@@ -1531,23 +1535,19 @@ class TestSolrAddingDocuments(SolrBased, RequestTracking, TestAddingDocuments):
         documents = [get_rand_userdoc() for i in range(3)]
         # Add with optimize:
         self.conn.add_many(documents, commit=True, wait_flush=False)
-        self.assertEqual(
-            self.selector(),
-            "/update?commit=true&waitFlush=false&waitSearcher=false")
+        self.compare_qs(self.selector(), "/update?commit=true&waitFlush=false&waitSearcher=false")
         # Can't verify the add since we said we weren't going to wait
         # for the flush.
-        self.assert_("<add>" in self.postbody())
+        self.assertTrue(b"<add>" in self.postbody())
 
     def test_add_many_commit_nosearcher(self):
         documents = [get_rand_userdoc() for i in range(3)]
         # Add with optimize:
         self.conn.add_many(documents, commit=True, wait_searcher=False)
-        self.assertEqual(
-            self.selector(),
-            "/update?commit=true&waitSearcher=false")
+        self.compare_qs(self.selector(), "/update?commit=true&waitSearcher=false")
         # Can't verify the add since we said we weren't going to wait
         # for a searcher.
-        self.assert_(b"<add>" in self.postbody())
+        self.assertTrue(b"<add>" in self.postbody())
 
     def test_add_many_waitflush_without_commit(self):
         docs = [get_rand_userdoc(), get_rand_userdoc()]
@@ -1649,12 +1649,10 @@ class TestSolrDocumentDeletion(SolrBased, RequestTracking,
         self.conn.add(doc, commit=True)
         self.check_added(doc)
         self.conn.delete(doc["id"], commit=True, wait_flush=False)
-        self.assertEqual(
-            self.selector(),
-            "/update?commit=true&waitFlush=false&waitSearcher=false")
+        self.compare_qs(self.selector(), "/update?commit=true&waitFlush=false&waitSearcher=false")
         # Can't verify the add since we said we weren't going to wait
         # for the flush.
-        self.assert_(b"<delete>" in self.postbody())
+        self.assertTrue(b"<delete>" in self.postbody())
 
     def test_delete_nosearcher(self):
         doc = get_rand_userdoc()
@@ -1662,12 +1660,10 @@ class TestSolrDocumentDeletion(SolrBased, RequestTracking,
         self.conn.add(doc, commit=True)
         self.check_added(doc)
         self.conn.delete(doc["id"], commit=True, wait_searcher=False)
-        self.assertEqual(
-            self.selector(),
-            "/update?commit=true&waitSearcher=false")
+        self.compare_qs(self.selector(),"/update?commit=true&waitSearcher=false")
         # Can't verify the add since we said we weren't going to wait
         # for the flush.
-        self.assert_(b"<delete>" in self.postbody())
+        self.assertTrue(b"<delete>" in self.postbody())
 
     def test_delete_waitflush_without_commit(self):
         doc = get_rand_userdoc()
